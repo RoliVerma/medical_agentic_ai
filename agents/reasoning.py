@@ -1,6 +1,4 @@
-from openai import OpenAI
-
-client = OpenAI()
+import requests
 
 def reasoning_agent(state):
     prompt = f"""
@@ -9,17 +7,32 @@ def reasoning_agent(state):
     Predictions: {state['predictions']}
     Confidence: {state['confidence']}
 
-    Explain:
-    - Likely findings
-    - Clinical interpretation
-    - Differential diagnosis
+    Explain findings and diagnosis.
     """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
+    try:
+        response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3",
+                "prompt": prompt,
+                "stream": False
+            }
+        )
 
-    return {
-        "reasoning": response.choices[0].message.content
-    }
+        data = response.json()
+
+        # ✅ Safe parsing
+        if "response" not in data:
+            return {
+                "reasoning": f"LLM Error: {data}"
+            }
+
+        return {
+            "reasoning": data["response"]
+        }
+
+    except Exception as e:
+        return {
+            "reasoning": f"Exception: {str(e)}"
+        }
