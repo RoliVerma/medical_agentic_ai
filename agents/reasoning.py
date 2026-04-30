@@ -1,4 +1,4 @@
-import requests
+import ollama
 
 def reasoning_agent(state):
     prompt = f"""
@@ -7,32 +7,14 @@ def reasoning_agent(state):
     Predictions: {state['predictions']}
     Confidence: {state['confidence']}
 
-    Explain findings and diagnosis.
+    Provide clinical reasoning.
     """
 
-    try:
-        response = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": "llama3",
-                "prompt": prompt,
-                "stream": False
-            }
-        )
+    response = ollama.chat(
+        model="llama3",
+        messages=[{"role": "user", "content": prompt}]
+    )
 
-        data = response.json()
-
-        # ✅ Safe parsing
-        if "response" not in data:
-            return {
-                "reasoning": f"LLM Error: {data}"
-            }
-
-        return {
-            "reasoning": data["response"]
-        }
-
-    except Exception as e:
-        return {
-            "reasoning": f"Exception: {str(e)}"
-        }
+    return {
+        "reasoning": response["message"]["content"]
+    }
